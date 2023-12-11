@@ -79,7 +79,12 @@ The system provides feedback through an LCD screen and a buzzer. Messages like "
    - Deploy the script as a web app and obtain the provided URL.
 
 ### Project Implementation Images
-
+[1](/a_pic.png)
+[2](/b_pic.png)
+[3](/c_pic.png)
+[4](/d_pic.png)
+[5](/e_pic.png)
+[6](/f_pic.png)
 
 ## Usage
 
@@ -93,6 +98,9 @@ The system provides feedback through an LCD screen and a buzzer. Messages like "
 
 ## YouTube Link
 A description and demo can be found on [demo](https://youtu.be/Gx8IvVP25Pg?si=oSAFD_z7xvm3a2nR)
+
+## Dropbox Documentation Link
+Here is a link to the project as documented on Dropbox [Dropbox folder]()
 
 ## Contributions
 
