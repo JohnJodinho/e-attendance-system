@@ -100,7 +100,7 @@ The system provides feedback through an LCD screen and a buzzer. Messages like "
 A description and demo can be found on [demo](https://youtu.be/Gx8IvVP25Pg?si=oSAFD_z7xvm3a2nR)
 
 ## Dropbox Documentation Link
-Here is a link to the project as documented on Dropbox [Dropbox folder]()
+Here is a link to the project as documented on Dropbox [Dropbox folder](https://www.dropbox.com/scl/fo/2i41bnhhp6uzn6toxypwg/h?rlkey=ltwk2ia1ghdlgrlaao09b7u5w&dl=0)
 
 ## Contributions
 
