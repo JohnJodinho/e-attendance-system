@@ -79,12 +79,12 @@ The system provides feedback through an LCD screen and a buzzer. Messages like "
    - Deploy the script as a web app and obtain the provided URL.
 
 ### Project Implementation Images
-![1](/a_pic.png)
-![2](/b_pic.png)
-![3](/c_pic.png)
-![4](/d_pic.png)
-![5](/e_pic.png)
-![6](/f_pic.png)
+![1](/a_pic.PNG)
+![2](/b_pic.PNG)
+![3](/c_pic.PNG)
+![4](/d_pic.PNG)
+![5](/e_pic.PNG)
+![6](/f_pic.PNG)
 
 ## Usage
 
