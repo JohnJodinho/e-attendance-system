@@ -7,33 +7,38 @@ var str = "";
 
 // Main function triggered on POST request
 function doGet(e) {
-  var parsedData;
+ 
   try {
-    parsedData = JSON.parse(e.postData.contents);
-  } catch (error) {
-    Logger.log("Error parsing payload!");
-    return ContentService.createTextOutput("Error: Invalid JSON payload.");
-  }
+    // Extract query parameters
+    var sheetName = e.parameter.sheet_name;
+    var command = e.parameter.command;
 
-  if (parsedData) {
-    var sheetName = parsedData.sheet_name;
-    var command = parsedData.command;
+    
     var Curr_Date = new Date(new Date().setHours(new Date().getHours() + hours));
     var Curr_Time = Utilities.formatDate(Curr_Date, timezone, 'HH:mm:ss');
 
-    if (sheetName === "StudentDetails") {
-      handleStudentDetails(parsedData);
-    } else if (sheetName.includes("Attendance")) {
-      handleAttendance(parsedData, Curr_Date, Curr_Time);
+    if (sheetName) {
+      if (sheetName === "StudentDetails") {
+        str  = handleStudentDetails(e.parameter); // Pass the query parameters
+        
+      } else if (sheetName.includes("Admin")) {
+        str = handleAttendance(e.parameter, Curr_Date, Curr_Time); // Pass query parameters, date, and time
+      
+        
+      } else {
+        str = "Invalid sheet name.";
+      }
     } else {
-      str = "Invalid sheet name.";
+      str = "Error! Missing 'sheet_name' parameter.";
     }
 
-    Logger.log(str);
-    return ContentService.createTextOutput(str);
-  } else {
-    return ContentService.createTextOutput("Error! Request body empty or in incorrect format.");
+  } catch (error) {
+    Logger.log("Error handling GET request: " + error.message);
+    str = "Error: " + error.message;
   }
+
+  Logger.log(str);
+  return ContentService.createTextOutput(str);
 }
 
 // Handle StudentDetails sheet logic
@@ -41,48 +46,76 @@ function handleStudentDetails(data) {
   var sheet = SS.getSheetByName("StudentDetails");
   var matricNumber = data.matricNumber;
   var fingerprintID = data.fingerprintID;
+  var command = data.command;
+  var responseMessage;
 
-  if (!matricNumber || !fingerprintID || !data.command) {
-    str = "Error! Missing required fields in payload for StudentDetails.";
-    return;
+  // Validate required fields
+  if (!matricNumber || !fingerprintID || !command) {
+    responseMessage = "Error! Missing required fields in payload for StudentDetails.";
+    Logger.log(responseMessage);
+    return responseMessage;
   }
 
+  // Get all rows from the sheet
   var allData = sheet.getDataRange().getValues();
-  var foundRow = -1;
+  var foundRow = 0;
 
-  // Search for the matricNumber in StudentDetails
+  // Search for duplicate entries
   for (var i = 0; i < allData.length; i++) {
-    if (allData[i][0] === matricNumber) { // [0] is Matriculation Number column
-      foundRow = i + 1;
+    if (allData[i][0] == matricNumber && allData[i][1] == fingerprintID) {
+      foundRow = i +1;
       break;
     }
   }
 
-  if (data.command === "insert") {
+  // Handle commands
+  if (command === "insert") {
     if (foundRow > 0) {
-      str = "Already Registered";
+      responseMessage = "Error! Matric number and fingerprint ID already registered.";
     } else {
       sheet.appendRow([matricNumber, fingerprintID]);
-      str = "Succesfully Registered";
+      responseMessage = "Successfully registered.";
     }
-  } else if (data.command === "update") {
+  } else if (command === "update") {
+    var foundRow = -1;
+    for (var i = 0; i < allData.length; i++) {
+      if (allData[i][0] == matricNumber) {
+        foundRow = i + 1;
+        break;
+      }
+    }
+
     if (foundRow > 0) {
-      sheet.getRange(foundRow, 2).setValue(fingerprintID); // Update Fingerprint ID
-      str = "Student details updated successfully.";
+      sheet.getRange(foundRow, 2).setValue(fingerprintID); // Update fingerprint ID
+      responseMessage = "Student details updated successfully.";
     } else {
-      str = "Matric number not found.";
+      responseMessage = "Error! Matric number not found.";
     }
-  } else if (data.command === "delete") {
+  } else if (command === "delete") {
+    var foundRow = -1;
+    for (var i = 0; i < allData.length; i++) {
+      if (allData[i][0] == matricNumber) {
+        foundRow = i + 1;
+        break;
+      }
+    }
+
     if (foundRow > 0) {
       sheet.deleteRow(foundRow);
-      str = "Student details deleted successfully.";
+      responseMessage = "Student details deleted successfully.";
     } else {
-      str = "Matric number not found.";
+      responseMessage = "Error! Matric number not found.";
     }
   } else {
-    str = "Invalid command for StudentDetails.";
+    responseMessage = "Error! Invalid command for StudentDetails.";
   }
+
+  Logger.log(responseMessage);
+  return responseMessage;
 }
+
+
+
 
 // Handle Attendance sheets logic
 function handleAttendance(data, Curr_Date, Curr_Time) {
@@ -90,8 +123,8 @@ function handleAttendance(data, Curr_Date, Curr_Time) {
   var fingerprintID = data.fingerprintID;
 
   if (!fingerprintID || !data.command) {
-    str = "Error! Missing required fields in payload for Attendance.";
-    return;
+    return "Error! Missing required fields in payload for Attendance.";
+   
   }
 
   var studentDetailsSheet = SS.getSheetByName("StudentDetails");
@@ -109,8 +142,8 @@ function handleAttendance(data, Curr_Date, Curr_Time) {
   }
 
   if (!found) {
-    str = "Not Registered";
-    return;
+    return "Not Registered";
+   
   }
 
   var sheet = SS.getSheetByName(sheetName);
@@ -121,23 +154,20 @@ function handleAttendance(data, Curr_Date, Curr_Time) {
 
   for (var i = 0; i < attendanceData.length; i++) {
     if (attendanceData[i][1] == matricNumber) { // [1] is Matric Number column
-      if (attendanceData[i][0] === dateToday) { // [0] is Date column
-        row_number = i + 1;
-        time_out = attendanceData[i][5]; // [5] is Time Out column
-        break;
-      }
+      
+      row_number = i + 1;
+      time_out = attendanceData[i][3]; // [5] is Time Out column
+      break;
+      
     }
   }
 
   if (row_number > 0) {
     if (time_out === "") {
-      sheet.getRange("F" + row_number).setValue(Curr_Time); // Sign Out
-      str = "Signed Out";
-      return;
-    } else {
-      str = "Already Signed Out Today"; // User already signed out for the day
-      return;
-    }
+      sheet.getRange("D" + row_number).setValue(Curr_Time); // Sign Out
+      return "Signed Out";
+      
+    } 
   }
 
   if (data.command === "insert_row") {
@@ -145,10 +175,13 @@ function handleAttendance(data, Curr_Date, Curr_Time) {
     sheet.getRange("A2").setValue(dateToday); // Date
     sheet.getRange("B2").setValue(matricNumber); // Matriculation Number
     sheet.getRange("C2").setValue(Curr_Time); // Time In
-    str = "Signed In";
     SpreadsheetApp.flush();
+    return "Signed In";
+    
   } else {
-    str = "Invalid command for Attendance.";
+    return "Invalid command for Attendance.";
   }
 }
+
+
 
