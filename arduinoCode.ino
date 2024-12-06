@@ -1,4 +1,4 @@
-
+#include <Arduino.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
@@ -35,9 +35,9 @@ SoftwareSerial mySerial(D7, D8); // RX = D7, TX = D6
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 // Secrets
-const char *GScriptId = "AKfycbxr_NuNOnrfxsmgnPfCAqUvzCwlGID0qB5Pq0MOY-am6kf0nQ-K5a76WKIb1VlXMJym";
-const char* ssid = "jodu270819";
-const char* password = "MyGalaxy";
+const char *GScriptId = "AKfycbygVBHzIDM2PY9ooO-WxU6eYiTRSZ0X9gCnJoIwBT83-mzPp6BxIKjfngLwnzzg4wEFcA";
+const char* ssid = "MyGalaxy";
+const char* password = "jodu270819";
 
 // Constants
 const char* host = "script.google.com";
@@ -108,8 +108,45 @@ String getInputFromKeypad(bool isMasked = true) {
   return input;
 }
 
+/*
+// This is for Testing Purposes
+String getInputFromKeypad(bool isMasked = true) {
+  Serial.println("Press * to clear input.");
+  Serial.println("Press # to submit input.");
 
+  String input = "";
+  char key;
 
+  while (true) {
+    // Check if there's any input available in the serial buffer
+    if (Serial.available() > 0) {
+      key = Serial.read(); // Read one character from the serial input
+
+      if (key == '#') {
+        // End input on pressing '#'
+        break;
+      } else if (key == '*') {
+        // Clear the input on pressing '*'
+        input = "";
+        Serial.println("\nInput cleared. Start again.");
+      } else if (isPrintable(key)) {
+        // Add the key to the input if it's printable
+        input += key;
+
+        if (isMasked) {
+          Serial.print("*"); // Mask input
+        } else {
+          Serial.print(key); // Display actual input
+        }
+      }
+    }
+  }
+
+  Serial.println(); // Add a newline after input
+  Serial.println("Input complete.");
+  return input;
+}
+*/
 
 EnrollmentResult enrollFingerprint() {
   EnrollmentResult result = {-1, ""};  // Default result in case of failure
@@ -176,7 +213,10 @@ EnrollmentResult enrollFingerprint() {
   return result;
 }
 
-
+/*
+// For testing
+uint8_t getFingerprintEnroll(int id){return true;}
+*/
 
 uint8_t getFingerprintEnroll(int id) {
   int p = -1;
@@ -309,6 +349,26 @@ uint8_t getFingerprintEnroll(int id) {
 }
 
 
+// int getFingerprintID() {
+//   Serial.println("Simulating fingerprint scan...");
+  
+//   // Simulate a delay for placing a finger and processing
+//   delay(2000);
+  
+//   // Generate a random number between 0 and 127
+//   int simulatedID = random(0, 128);
+  
+//   // Simulate success or failure output
+//   if (simulatedID > 5) { // Simulate a successful match 95% of the time
+//     Serial.println("Fingerprint scan successful!");
+//     Serial.print("Fingerprint ID: ");
+//     Serial.println(simulatedID);
+//     return simulatedID;
+//   } else { // Simulate failure in rare cases
+//     Serial.println("Fingerprint scan failed!");
+//     return -1;
+//   }
+// }
 int getFingerprintID() {
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -339,7 +399,7 @@ int getFingerprintID() {
     lcd.setCursor(0, 0);
     lcd.print("VERIFIED!");
     lcd.setCursor(0, 1);
-    lcd.print("U19EE10");
+   
     lcd.print(finger.fingerID);
     delay(5000);
     
@@ -374,26 +434,13 @@ String checkPasscode() {
 }
 
 
-
-
-
 String constructPayloadForReg(String sheetName, String matricNumber, int fingerprintID, String command) {
-    String payload = "{";
-    payload += "\"sheet_name\":\"" + sheetName + "\",";
-    payload += "\"matricNumber\":\"" + matricNumber + "\",";
-    payload += "\"fingerprintID\":\"" + String(fingerprintID) + "\",";
-    payload += "\"command\":\"" + command + "\"";
-    payload += "}";
-    return payload;
+  return "?sheet_name=" + sheetName + "&matricNumber=" + matricNumber + "&fingerprintID=" + String(fingerprintID) + "&command=" + command;
+    
 }
 
 String constructPayloadForAttendance(String sheetName, int fingerprintID, String command) {
-    String payload = "{";
-    payload += "\"sheet_name\":\"" + sheetName + "\",";
-    payload += "\"fingerprintID\":\"" + String(fingerprintID) + "\",";
-    payload += "\"command\":\"" + command + "\"";
-    payload += "}";
-    return payload;
+  return "?sheet_name=" + sheetName + "&fingerprintID=" + String(fingerprintID) + "&command=" + command;
 }
 /****************************************************************************************************
  * Connect to WiFi
@@ -455,6 +502,7 @@ void connectToGoogle() {
 void setup() {
   Serial.begin(9600);
   Serial.println("System Initializing...");
+  // randomSeed(analogRead(0)); // Seed the random number generator
 
   // Initialize I2C for Keypad (PCF8574T)
   Wire.begin(D2 ,D1); // SDA = D2, SCL = D1
@@ -599,7 +647,7 @@ void loop() {
         Serial.println("Publishing data...");
         Serial.println(payload);
 
-        if (client->POST(url, host, payload)) {
+        if (client->GET(url + payload, host)) {
           lcd.clear();
           lcd.setCursor(0, 0);
           lcd.print("FingerID: " + String(fingerprint));
@@ -650,16 +698,16 @@ void loop() {
       if (fingerprintSigning){
         
         if (gottenPasscode == passcodes[0]){
-          payload = constructPayloadForAttendance("Admin1 Attendance", fingerprintSigning, "insert_row");
+          payload = constructPayloadForAttendance("Admin1Attendance", fingerprintSigning, "insert_row");
         }
         if (gottenPasscode == passcodes[1]){
-          payload = constructPayloadForAttendance("Admin2 Attendance", fingerprintSigning, "insert_row");
+          payload = constructPayloadForAttendance("Admin2Attendance", fingerprintSigning, "insert_row");
         }
         if (gottenPasscode == passcodes[2]){
-          payload = constructPayloadForAttendance("Admin3 Attendance", fingerprintSigning, "insert_row");
+          payload = constructPayloadForAttendance("Admin3Attendance", fingerprintSigning, "insert_row");
         }
         if (gottenPasscode == passcodes[3]){
-          payload = constructPayloadForAttendance("Admin4 Attendance", fingerprintSigning, "insert_row");
+          payload = constructPayloadForAttendance("Admin4Attendance", fingerprintSigning, "insert_row");
         }
       }
       lcd.clear();
@@ -671,7 +719,7 @@ void loop() {
       Serial.println("Publishing data...");
       Serial.println(payload);
 
-      if (client->POST(url, host, payload)) {
+      if (client->GET(url + payload, host )) {
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("FingerID: " + String(fingerprintSigning));
